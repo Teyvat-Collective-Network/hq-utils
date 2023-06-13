@@ -5,6 +5,9 @@ import {
     InteractionType,
 } from "discord.js";
 import { config } from "dotenv";
+import fetch from "node-fetch";
+
+import { bar, characters, get_image } from "./data.js";
 
 process.on("uncaughtException", console.error);
 
@@ -37,8 +40,45 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 ephemeral: true,
             });
 
-            const data = await api("/guilds");
-            console.log(data);
+            const guilds = await api("/guilds");
+            guilds.sort((x, y) => x.name.localeCompare(y.name));
+
+            while (guilds.length > 0) {
+                await (
+                    await client.channels.fetch(interaction.channelId)
+                ).send({
+                    embeds: await Promise.all(
+                        guilds.splice(0, 10).map(async (guild) =>
+                            ((owner, advisor) => ({
+                                title: guild.name,
+                                description: `${characters[
+                                    guild.character
+                                ].join(" ")}\n\n**Owner:** ${owner} (${
+                                    owner.discriminator === "0"
+                                        ? owner.username
+                                        : owner.tag
+                                })${
+                                    advisor
+                                        ? `\n**Advisor:** ${advisor} (${
+                                              advisor.discriminator === "0"
+                                                  ? advisor.username
+                                                  : advisor.tag
+                                          })`
+                                        : ""
+                                }`,
+                                color: 0x2b2d31,
+                                thumbnail: { url: get_image(guild.character) },
+                                ...bar,
+                                footer: { text: guild.id },
+                            }))(
+                                await client.users.fetch(guild.owner),
+                                guild.advisor &&
+                                    (await client.users.fetch(guild.advisor))
+                            )
+                        )
+                    ),
+                });
+            }
 
             await interaction.followUp({ content: "Done!", ephemeral: true });
         }
