@@ -17,7 +17,8 @@ process.on("uncaughtException", console.error);
 
 config();
 
-const { API, TOKEN, ELECTION_FORUM, NOMINATING_TAG, LANDING } = process.env;
+const { API, TOKEN, ELECTION_FORUM, NOMINATING_TAG, LANDING, EXEC_CHAT } =
+    process.env;
 
 const api = async (route) => await (await fetch(`${API}${route}`)).json();
 
@@ -227,8 +228,31 @@ Thanks!`);
             });
 
             await interaction.reply({ content: invite.url, ephemeral: true });
+
+            const channel = await client.channels.fetch(EXEC_CHAT);
+            if (!channel.isTextBased()) return;
+
+            await channel.send({
+                content: `${interaction.user} created a one-week one-use invite using \`/invite\``,
+                allowedMentions: { parse: [] },
+            });
         }
     }
+});
+
+client.on(Events.InviteCreate, async (invite) => {
+    if (invite.inviterId === null || invite.inviterId === client.user.id)
+        return;
+
+    const channel = await client.channels.fetch(EXEC_CHAT);
+    if (!channel.isTextBased()) return;
+
+    await channel.send({
+        content: `${invite.inviter} created an invite (max age: ${
+            invite.maxAge ? `${invite.maxAge} seconds` : "infinite"
+        }, max uses: ${invite.maxUses || "unlimited"})`,
+        allowedMentions: { parse: [] },
+    });
 });
 
 await client.login(TOKEN);
