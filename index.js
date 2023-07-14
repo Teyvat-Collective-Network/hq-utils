@@ -5,6 +5,7 @@ import {
     Client,
     Colors,
     Events,
+    Guild,
     InteractionType,
     ThreadAutoArchiveDuration,
 } from "discord.js";
@@ -17,14 +18,36 @@ process.on("uncaughtException", console.error);
 
 config();
 
-const { API, TOKEN, ELECTION_FORUM, NOMINATING_TAG, LANDING, BOT_LOGS } =
+const { API, HQ, TOKEN, ELECTION_FORUM, NOMINATING_TAG, LANDING, BOT_LOGS } =
     process.env;
 
 const api = async (route) => await (await fetch(`${API}${route}`)).json();
 
 const client = new Client({ intents: 3276799 });
+let hq;
+
+async function sweep_invites() {
+    for (const [, invite] of hq.invites.cache) {
+        if (invite.uses && invite.uses > 0) {
+            const channel = await client.channels.fetch(BOT_LOGS);
+
+            if (channel.isTextBased())
+                await channel.send(
+                    `Deleting invite with code ${invite.code} (${
+                        invite.inviter ?? "unknown creator"
+                    }) since it has been used.`
+                );
+
+            await invite.delete();
+        }
+    }
+}
 
 client.on(Events.ClientReady, async () => {
+    hq = await client.guilds.fetch(HQ);
+
+    sweep_invites();
+
     await client.application.commands.set([
         {
             type: ApplicationCommandType.ChatInput,
@@ -253,6 +276,10 @@ client.on(Events.InviteCreate, async (invite) => {
         }, max uses: ${invite.maxUses || "unlimited"})`,
         allowedMentions: { parse: [] },
     });
+});
+
+client.on(Events.GuildMemberAdd, async (member) => {
+    if (member.guild.id === HQ) sweep_invites();
 });
 
 await client.login(TOKEN);
