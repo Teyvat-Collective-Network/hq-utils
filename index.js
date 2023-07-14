@@ -5,7 +5,6 @@ import {
     Client,
     Colors,
     Events,
-    ForumChannel,
     InteractionType,
     ThreadAutoArchiveDuration,
 } from "discord.js";
@@ -18,7 +17,7 @@ process.on("uncaughtException", console.error);
 
 config();
 
-const { API, TOKEN, ELECTION_FORUM, NOMINATING_TAG } = process.env;
+const { API, TOKEN, ELECTION_FORUM, NOMINATING_TAG, LANDING } = process.env;
 
 const api = async (route) => await (await fetch(`${API}${route}`)).json();
 
@@ -80,6 +79,12 @@ client.on(Events.ClientReady, async () => {
                     minValue: 2,
                 },
             ],
+        },
+        {
+            type: ApplicationCommandType.ChatInput,
+            name: "invite",
+            description: "generate a one-week one-use invite",
+            defaultMemberPermissions: "0",
         },
     ]);
 
@@ -215,6 +220,13 @@ Thanks!`);
             await channel.setAppliedTags([NOMINATING_TAG]);
 
             await interaction.editReply(`${channel}`);
+        } else if (interaction.commandName === "invite") {
+            const invite = await interaction.guild.invites.create(LANDING, {
+                maxAge: 604800,
+                maxUses: 1,
+            });
+
+            await interaction.reply({ content: invite.url, ephemeral: true });
         }
     }
 });
