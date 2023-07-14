@@ -22,7 +22,7 @@ const { API, TOKEN, ELECTION_FORUM, NOMINATING_TAG, LANDING, BOT_LOGS } =
 
 const api = async (route) => await (await fetch(`${API}${route}`)).json();
 
-const client = new Client({ intents: 64 });
+const client = new Client({ intents: 3276799 });
 
 client.on(Events.ClientReady, async () => {
     await client.application.commands.set([
