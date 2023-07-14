@@ -17,7 +17,7 @@ process.on("uncaughtException", console.error);
 
 config();
 
-const { API, TOKEN, ELECTION_FORUM, NOMINATING_TAG, LANDING, EXEC_CHAT } =
+const { API, TOKEN, ELECTION_FORUM, NOMINATING_TAG, LANDING, BOT_LOGS } =
     process.env;
 
 const api = async (route) => await (await fetch(`${API}${route}`)).json();
@@ -229,7 +229,7 @@ Thanks!`);
 
             await interaction.reply({ content: invite.url, ephemeral: true });
 
-            const channel = await client.channels.fetch(EXEC_CHAT);
+            const channel = await client.channels.fetch(BOT_LOGS);
             if (!channel.isTextBased()) return;
 
             await channel.send({
@@ -244,7 +244,7 @@ client.on(Events.InviteCreate, async (invite) => {
     if (invite.inviterId === null || invite.inviterId === client.user.id)
         return;
 
-    const channel = await client.channels.fetch(EXEC_CHAT);
+    const channel = await client.channels.fetch(BOT_LOGS);
     if (!channel.isTextBased()) return;
 
     await channel.send({
